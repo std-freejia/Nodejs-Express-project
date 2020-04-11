@@ -1,23 +1,24 @@
 var express = require('express');
 var app = express();
 var fs = require('fs');
-
 var compression = require('compression')
 var bodyParser = require('body-parser');
-var template = require('./lib/template.js');
+// 단골 보안 이슈를 해결해주는 helmet
+var helmet = require('helmet');
+var port = 3000;
 
 // 라우팅 파일 가져오기 
 var topicRouter = require('./routes/topic');
-var port = 3000;
+var indexRouter = require('./routes/index');
+
+app.use(helmet());
 
 // public 디렉토리 안에서 정적 파일을 찾겠다고 선언. 정적  파일을 url 을 통해 접근 가능.
 app.use(express.static('public'))
-// http://localhost:3000/images/hello.jpg
 
 // bodyParser 미들웨어 : 사용자가 전송한 POST 데이터를 분석하여 제공.
 // app.post() 의 콜백에서 request에 body라는 속성을 만들어낸다. 
 app.use(bodyParser.urlencoded({extended: false}));
-
 // 모든 응답을 압축
 app.use(compression());
 
@@ -30,26 +31,9 @@ app.get('*', function(request, response, next){
     next();
   });
 });
-// app.use() 모든 요청에 대하여
-// app.get('*', function()) 모든 get 요청에 대해서만 파일목록 가져온다. 
 
 app.use('/topic', topicRouter);
-
-app.get('/', function(request, response){
-  
-  var title = 'Welcome';
-  var description = 'Hello, Node.js';
-  var list = template.list(request.list);
-  // html 코드를 가져온다. 변수를 주입한다. 
-  var html = template.HTML(title, list,
-    `<h2>${title}</h2>${description}
-    <img src="/images/hello.jpg" style="width:400px; display:block; margin-top:10px">`,
-    `<a href="/topic/create">create</a>`
-  );
-  response.send(html);
-
-});
-
+app.use('/', indexRouter);
 
 // 잘못된 경로 에러 처리 (404)
 app.use(function(req, res, next) {
